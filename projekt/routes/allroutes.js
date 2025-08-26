@@ -19,3 +19,27 @@ router.post("/track", async (req, res) => {
     res.status(500).send("Serverfel");
   }
 });
+
+router.post("/register", async (req, res) => {
+  const { email, fingerprint } = req.body;
+  if (!email || !fingerprint) {
+    return res.status(400).send("Email och fingerprint krävs");
+  }
+
+  try {
+    const visit = await Visit.findOne({ fingerprint });
+    const user = new User({
+      email,
+      influencer: visit?.influencer || "okänd",
+      source: visit?.source || "okänd",
+    });
+    await user.save();
+    console.log("Användare registrerad", user);
+    res.json(user);
+  } catch (error) {
+    console.error("Kunde ej registrera användare", error);
+    res.status(500).send("Serverfel");
+  }
+});
+
+module.exports = router;
