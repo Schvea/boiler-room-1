@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrering</title>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+</head>
+<body>
+      <h1>Registrera dig</h1>
+  <form action="/register" method="POST">
+    <input type="email" name="email" placeholder="Din e-post" required />
+    <input type="hidden" id="fp" name="fingerprint" />
+    <button type="submit">Registrera</button>
+  </form>
+ <script>
+
+    FingerprintJS.load().then(fp => {
+      fp.get().then(result => {
+        const visitorId = result.visitorId;
+        document.getElementById("fp").value = visitorId;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const influencer = urlParams.get("influencer");
+        const source = urlParams.get("source");
+
+        if (influencer || source) {
+          fetch("/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fingerprint: visitorId, influencer, source })
+          })
+          .then(() => console.log("Tracking skickat"))
+          .catch(err => console.error("Fel vid tracking", err));
+        }
+      });
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", function(event) {
+      event.preventDefault(); 
+
+      const email = document.getElementById("email").value;
+      const fingerprint = document.getElementById("fp").value;
+
+      fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, fingerprint })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Något gick fel vid registrering");
+        return response.json();
+      })
+      .then(user => {
+
+        document.getElementById("message").innerHTML = `
+          <h2>Tack för din registrering!</h2>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Influencer:</strong> ${user.influencer}</p>
+          <p><strong>Source:</strong> ${user.source}</p>
+          <p><em>Registrerat: ${new Date(user.registered_at).toLocaleString()}</em></p>
+        `;
+        this.reset(); 
+      })
+      .catch(error => {
+        document.getElementById("message").textContent = error.message;
+      });
+    });
+  </script>
+</body>
+</html>

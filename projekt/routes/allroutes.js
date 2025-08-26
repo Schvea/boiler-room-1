@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Visit, User } = require("./schemas");
+const { Visit, User } = require("../models/schemas");
 
 router.post("/track", async (req, res) => {
   const { fingerprint, influencer, source } = req.body;
